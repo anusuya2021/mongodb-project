@@ -1,0 +1,176 @@
+Question no 1 :
+Find the student name who scored maximum scores in all (exam, quiz and homework)?
+Solution to print maximum score in exam :
+
+db.students.aggregate([
+    
+
+    // Expand the scores array into a stream of documents
+    { $unwind: '$scores' },
+
+    // Filter to 'exam' scores 
+    { $match: {
+        'scores.type': 'exam'
+    }},
+
+    // Sort in descending order
+    { $sort: {
+        'scores.score': -1
+    }},
+     { $out : 'aggResults' }
+])
+db.aggResults.find({},{_id:0})
+
+solution to print maximum score in "quiz"
+
+db.students.aggregate([
+    
+
+    // Expand the scores array into a stream of documents
+    { $unwind: '$scores' },
+
+    // Filter to 'quiz' scores 
+    { $match: {
+        'scores.type': 'quiz'
+    }},
+
+    // Sort in descending order
+    { $sort: {
+        'scores.score': -1
+    }},
+     { $out : 'aggResults' }
+])
+db.aggResults.find({},{_id:0})
+
+Solution to print maximum score in "homework"
+
+db.students.aggregate([
+    
+
+    // Expand the scores array into a stream of documents
+    { $unwind: '$scores' },
+
+    // Filter to 'homework' scores 
+    { $match: {
+        'scores.type': 'homework'
+    }},
+
+    // Sort in descending order
+    { $sort: {
+        'scores.score': -1
+    }},
+     { $out : 'aggResults' }
+])
+db.aggResults.find({},{_id:0})
+
+2)Find students who scored below average in the 
+exam and pass mark is 40%?
+
+db.students.aggregate([
+    
+
+    // Expand the scores array into a stream of documents
+    { $unwind: '$scores' },
+
+    // Filter to 'homework' scores 
+    { $match: {
+        'scores.type': 'exam'
+    }},
+
+    // Sort in descending order
+    { $sort: {
+        'scores.score': -1
+    }},
+     { $out : 'aggResults' }
+])
+db.aggResults.find({"scores.score" : {$lt:40}},{_id:0}).pretty()
+
+3)      Find students who scored below pass mark and assigned them as fail, and above pass mark as pass in all the categories.
+
+db.students.aggregate([
+    {$set:{"result":"pass"}}
+    ]);
+db.students.aggregate([
+    { $match : 
+       {$or :[
+                       { $and: [ {"scores.0.score":{$lt:35}},{"scores.0.type":"exam"} ] },
+                       { $and: [ {"scores.1.score":{$lt:35}},{"scores.1.type":"quiz"} ] },
+                       { $and: [ {"scores.2.score":{$lt:35}},{"scores.2.type":"homework"} ] }  
+           ]
+     }},
+     { $addFields: {"result" :"fail" } }
+    ]);
+
+
+4)  Find the total and average of the exam, quiz and homework and store them in a separate collection.
+
+db.students.aggregate(
+   [
+     {
+       $project:
+         {
+           totScore: { $sum: "$scores.score" },
+           avgScore: { $avg: '$scores.score' }
+           
+         }
+        },
+        {$out :"Tot_average" }
+   ]
+)
+db.Tot_average.find({})
+
+
+5)      Create a new collection which consists of students who scored below average and above 40% in all the categories.
+
+db.students.aggregate([
+    { $match : 
+       {$or :[
+                       { $and: [ {"scores.0.score":{$lt:40}},{"scores.0.type":"exam"} ] },
+                       { $and: [ {"scores.1.score":{$lt:40}},{"scores.1.type":"quiz"} ] },
+                       { $and: [ {"scores.2.score":{$lt:40}},{"scores.2.type":"homework"} ] }  
+           ]
+     }},
+     { $out: 'failed' }
+    ]);
+db.failed.find({})
+
+db.students.aggregate([
+    { $match : 
+       {$and :[
+                       { $and: [ {"scores.0.score":{$gte:40}},{"scores.0.type":"exam"} ] },
+                       { $and: [ {"scores.1.score":{$gte:40}},{"scores.1.type":"quiz"} ] },
+                       { $and: [ {"scores.2.score":{$gte:40}},{"scores.2.type":"homework"} ] }  
+           ]
+     }},
+     { $out: 'passed' }
+    ]);
+db.passed.find({})
+
+
+6)      Create a new collection which consists of students who scored below the fail mark in all the categories.
+
+db.students.aggregate([
+    { $match : 
+       {$and :[
+                       { $and: [ {"scores.0.score":{$lt:40}},{"scores.0.type":"exam"} ] },
+                       { $and: [ {"scores.1.score":{$lt:40}},{"scores.1.type":"quiz"} ] },
+                       { $and: [ {"scores.2.score":{$lt:40}},{"scores.2.type":"homework"} ] }  
+           ]
+     }},
+     { $out: 'failmark' }
+    ]);
+db.failmark.find({})
+
+7)      Create a new collection which consists of students who scored above pass mark in all the categories.
+
+db.students.aggregate([
+    { $match : 
+       {$and :[
+                       { $and: [ {"scores.0.score":{$gte:40}},{"scores.0.type":"exam"} ] },
+                       { $and: [ {"scores.1.score":{$gte:40}},{"scores.1.type":"quiz"} ] },
+                       { $and: [ {"scores.2.score":{$gte:40}},{"scores.2.type":"homework"} ] }  
+           ]
+     }},
+     { $out: 'passmark' }
+    ]);
+db.passmark.find({})
